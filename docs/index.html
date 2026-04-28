@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genkochi - Learn Languages Through Photos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        .tagline {
+            font-size: 24px;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin: 40px 0;
+            text-align: left;
+        }
+        .feature {
+            background: rgba(255,255,255,0.1);
+            padding: 24px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+        .feature h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .feature p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        .app-store-btn {
+            display: inline-block;
+            background: #000;
+            color: #fff;
+            padding: 14px 32px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 20px 10px;
+            transition: transform 0.2s;
+        }
+        .app-store-btn:hover {
+            transform: scale(1.05);
+        }
+        .links {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        .links a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            margin: 0 16px;
+            font-size: 14px;
+        }
+        .links a:hover {
+            color: #fff;
+        }
+        footer {
+            margin-top: 40px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">📸</div>
+        <h1>Genkochi</h1>
+        <p class="tagline">Learn languages through the world around you</p>
+
+        <div class="features">
+            <div class="feature">
+                <h3>📷 Photo Learning</h3>
+                <p>Snap photos of anything and learn vocabulary in your target language</p>
+            </div>
+            <div class="feature">
+                <h3>🗣️ Speech Practice</h3>
+                <p>Practice pronunciation with real-time feedback</p>
+            </div>
+            <div class="feature">
+                <h3>✍️ Writing Practice</h3>
+                <p>Trace characters and learn to write in any script</p>
+            </div>
+            <div class="feature">
+                <h3>🌍 21 Languages</h3>
+                <p>Japanese, Spanish, French, Korean, Chinese, and many more</p>
+            </div>
+        </div>
+
+        <a href="#" class="app-store-btn">Download on the App Store</a>
+
+        <div class="links">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="support.html">Support</a>
+        </div>
+
+        <footer>
+            &copy; 2026 Genkochi. All rights reserved.
+        </footer>
+    </div>
+</body>
+</html>
