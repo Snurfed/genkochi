@@ -1,19 +1,29 @@
 {
   "expo": {
-    "name": "photolingo",
-    "slug": "photolingo",
+    "name": "Genkochi",
+    "slug": "genkochi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "genkochi",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0ea5e9"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.photolingo.app",
+      "buildNumber": "4",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Genkochi needs camera access to take photos for language learning",
+        "NSPhotoLibraryUsageDescription": "Genkochi needs photo library access to select photos for language learning",
+        "NSMicrophoneUsageDescription": "Genkochi needs microphone access for speech practice",
+        "NSSpeechRecognitionUsageDescription": "Genkochi uses speech recognition to help you practice pronunciation",
+        "NSLocationWhenInUseUsageDescription": "Genkochi uses your location to place photos on your vocabulary map"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,10 +31,60 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "package": "com.photolingo.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBHTp03YQ2VWwHLKyo7JUfsZmwkvJMsOik"
+        }
+      }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Genkochi to access your camera for language learning"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Genkochi to access your photos for language learning"
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Genkochi needs microphone access for speech practice",
+          "speechRecognitionPermission": "Genkochi uses speech recognition to help you practice pronunciation"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Genkochi uses your location to place photos on your vocabulary map"
+        }
+      ],
+      "expo-audio",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "ndkVersion": "30.0.14904198"
+          }
+        }
+      ]
+    ]
   }
 }
