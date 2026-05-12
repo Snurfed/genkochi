@@ -20,6 +20,7 @@ import {
   Alert,
   ScrollView,
   Platform,
+  Easing,
 } from 'react-native';
 import MapView, { Marker, Polyline, Region, PROVIDER_DEFAULT } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
@@ -1052,6 +1053,34 @@ function SpotIcon({
   const needsReview = memoryStatus === 'fading' || memoryStatus === 'weak' || memoryStatus === 'forgotten';
   const imageSize = SPOT_SIZE - 6;
 
+  // Pulsing animation for items needing review
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (needsReview) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.4,
+            duration: 1200,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1200,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [needsReview, pulseAnim]);
+
   // Android: Clean pin marker (Images don't render properly in Android map markers)
   // TODO: Implement pre-rendered circular thumbnails for photo display
   if (Platform.OS === 'android') {
@@ -1059,16 +1088,19 @@ function SpotIcon({
 
     return (
       <View collapsable={false} style={{ alignItems: 'center' }}>
-        <View
+        <Animated.View
           collapsable={false}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: colors.white,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          style={[
+            {
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: colors.white,
+              alignItems: 'center',
+              justifyContent: 'center',
+            },
+            needsReview && { opacity: pulseAnim },
+          ]}
         >
           <View
             collapsable={false}
@@ -1105,7 +1137,7 @@ function SpotIcon({
               <Text style={{ fontSize: 11, fontWeight: '700', color: colors.white }}>{count}</Text>
             </View>
           )}
-        </View>
+        </Animated.View>
         <View style={{
           width: 0,
           height: 0,
@@ -1131,22 +1163,25 @@ function SpotIcon({
         { width: SPOT_SIZE + 4, minHeight: SPOT_SIZE + 12 },
       ]}
     >
-      <View
+      <Animated.View
         collapsable={false}
-        style={{
-          width: SPOT_SIZE,
-          height: SPOT_SIZE,
-          borderRadius: SPOT_SIZE / 2,
-          backgroundColor: colors.white,
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-          elevation: 6,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.25,
-          shadowRadius: 6,
-        }}
+        style={[
+          {
+            width: SPOT_SIZE,
+            height: SPOT_SIZE,
+            borderRadius: SPOT_SIZE / 2,
+            backgroundColor: colors.white,
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            elevation: 6,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.25,
+            shadowRadius: 6,
+          },
+          needsReview && { opacity: pulseAnim },
+        ]}
       >
         <Image
           source={{ uri: resolveImageUri(spot.imageUri) }}
@@ -1157,7 +1192,7 @@ function SpotIcon({
           }}
           resizeMode="cover"
         />
-      </View>
+      </Animated.View>
       {count > 1 && (
         <View style={[styles.countBadge, needsReview && styles.countBadgeNeedsReview]}>
           {needsReview && <Ionicons name="flash" size={9} color={colors.white} style={{ marginRight: 1 }} />}
