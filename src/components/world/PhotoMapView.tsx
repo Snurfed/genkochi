@@ -5,7 +5,7 @@
  * Clusters nearby photos and shows expandable photo stacks.
  */
 
-import React, { useRef, useMemo, useCallback, useState } from 'react';
+import React, { useRef, useMemo, useCallback, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import {
   Modal,
   ScrollView,
   Alert,
+  Easing,
 } from 'react-native';
 import MapView, { Marker, Region, PROVIDER_DEFAULT } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
@@ -510,36 +511,15 @@ export function PhotoMapView({ lessons, onLessonPress, onLessonDelete }: PhotoMa
                   contentContainerStyle={styles.expandedScroll}
                 >
                   {expandedCluster.lessons.map((lesson) => (
-                    <View key={lesson.id} style={styles.expandedPhotoWrapper}>
-                      <TouchableOpacity
-                        style={styles.expandedPhoto}
-                        onPress={() => {
-                          closeModal();
-                          setTimeout(() => onLessonPress(lesson), 200);
-                        }}
-                        activeOpacity={0.9}
-                      >
-                        <Image
-                          source={{ uri: resolveImageUri(lesson.imageUri) }}
-                          style={styles.expandedImage}
-                          resizeMode="cover"
-                        />
-                        <View style={styles.expandedOverlay}>
-                          <Text style={styles.expandedWordCount}>
-                            {lesson.words.length} words
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-
-                      {onLessonDelete && (
-                        <TouchableOpacity
-                          style={styles.expandedDeleteButton}
-                          onPress={() => handleDelete(lesson)}
-                        >
-                          <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
-                        </TouchableOpacity>
-                      )}
-                    </View>
+                    <ExpandedPhotoItem
+                      key={lesson.id}
+                      lesson={lesson}
+                      onPress={() => {
+                        closeModal();
+                        setTimeout(() => onLessonPress(lesson), 200);
+                      }}
+                      onDelete={onLessonDelete ? () => handleDelete(lesson) : undefined}
+                    />
                   ))}
                 </ScrollView>
               </BlurView>
@@ -558,10 +538,44 @@ function PhotoMarker({ cluster }: { cluster: PhotoCluster }) {
   const isCluster = cluster.lessons.length > 1;
   const mainWord = firstLesson.words[0];
 
+  // Check if any lesson in cluster needs review
+  const needsReview = cluster.lessons.some(l => l.wordsToReview > 0);
+
+  // Pulsing animation for items due for review
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (needsReview) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.5,
+            duration: 1200,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1200,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [needsReview, pulseAnim]);
+
   return (
     <View style={styles.markerContainer}>
       {/* Photo thumbnail with speech bubble shape */}
-      <View style={styles.markerBubble}>
+      <Animated.View style={[
+        styles.markerBubble,
+        needsReview && { opacity: pulseAnim }
+      ]}>
         <Image
           source={{ uri: resolveImageUri(firstLesson.imageUri) }}
           style={styles.markerImage}
@@ -592,10 +606,84 @@ function PhotoMarker({ cluster }: { cluster: PhotoCluster }) {
             )}
           </View>
         )}
-      </View>
+      </Animated.View>
 
       {/* Pointer */}
       <View style={styles.markerPointer} />
+    </View>
+  );
+}
+
+// Expanded photo item with pulsing effect for items due for review
+function ExpandedPhotoItem({
+  lesson,
+  onPress,
+  onDelete,
+}: {
+  lesson: PhotoLesson;
+  onPress: () => void;
+  onDelete?: () => void;
+}) {
+  const needsReview = lesson.wordsToReview > 0;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (needsReview) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.5,
+            duration: 1200,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1200,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [needsReview, pulseAnim]);
+
+  return (
+    <View style={styles.expandedPhotoWrapper}>
+      <TouchableOpacity
+        style={styles.expandedPhoto}
+        onPress={onPress}
+        activeOpacity={0.9}
+      >
+        <Animated.View style={[
+          styles.expandedImageContainer,
+          needsReview && { opacity: pulseAnim }
+        ]}>
+          <Image
+            source={{ uri: resolveImageUri(lesson.imageUri) }}
+            style={styles.expandedImage}
+            resizeMode="cover"
+          />
+        </Animated.View>
+        <View style={styles.expandedOverlay}>
+          <Text style={styles.expandedWordCount}>
+            {lesson.words.length} words
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {onDelete && (
+        <TouchableOpacity
+          style={styles.expandedDeleteButton}
+          onPress={onDelete}
+        >
+          <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -828,6 +916,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   expandedImage: {
+    width: '100%',
+    height: '100%',
+  },
+  expandedImageContainer: {
     width: '100%',
     height: '100%',
   },
