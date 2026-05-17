@@ -2,18 +2,19 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Animated,
   Dimensions,
+  Pressable,
 } from 'react-native';
 import {
   GestureDetector,
   Gesture,
 } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Word } from '../../types';
-import { colors, borderRadius, spacing, typography } from '../../constants/design';
+import { colors } from '../../constants/design';
 import { useAppStore } from '../../store';
 import { getNativeTranslation } from '../../utils/nativeTranslation';
 
@@ -49,10 +50,15 @@ export function WordBubble({
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const startPosition = useRef({ x: position.x, y: position.y });
+  const startPositionRef = useRef({ x: position.x, y: position.y });
 
   const { nativeLanguage } = useAppStore();
   const nativeMeaning = getNativeTranslation(word, nativeLanguage);
+
+  // Update start position when position prop changes
+  useEffect(() => {
+    startPositionRef.current = { x: position.x, y: position.y };
+  }, [position.x, position.y]);
 
   // Entrance animation
   useEffect(() => {
@@ -120,73 +126,72 @@ export function WordBubble({
   const bubbleColors = getBubbleColors();
   const isCompleted = state === 'quizzed' || state === 'mastered';
 
-  // Long press gesture to initiate drag
-  const longPressGesture = Gesture.LongPress()
-    .minDuration(400)
+  // Helper functions for worklet callbacks
+  const onDragStart = () => {
+    setIsDragging(true);
+    Animated.spring(dragScaleAnim, {
+      toValue: 1.1,
+      tension: 100,
+      friction: 8,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const onDragUpdate = (translationX: number, translationY: number) => {
+    setDragOffset({ x: translationX, y: translationY });
+  };
+
+  const onDragEnd = (translationX: number, translationY: number) => {
+    // Calculate final position in percentage
+    const newX = Math.max(10, Math.min(90,
+      startPositionRef.current.x + (translationX / SCREEN_WIDTH) * 100
+    ));
+    const newY = Math.max(8, Math.min(75,
+      startPositionRef.current.y + (translationY / SCREEN_HEIGHT) * 100
+    ));
+
+    // Save the new position
+    if (onPositionChange) {
+      onPositionChange(word.id, { x: newX, y: newY });
+    }
+
+    // Reset drag state
+    setIsDragging(false);
+    setDragOffset({ x: 0, y: 0 });
+    Animated.spring(dragScaleAnim, {
+      toValue: 1,
+      tension: 100,
+      friction: 8,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  // Pan gesture with long press activation for dragging
+  const panGesture = Gesture.Pan()
+    .activateAfterLongPress(400)
     .enabled(isDragEnabled && !!onPositionChange)
     .onStart(() => {
       'worklet';
-      startPosition.current = { x: position.x, y: position.y };
+      runOnJS(onDragStart)();
     })
-    .runOnJS(true)
-    .onEnd(() => {
-      setIsDragging(true);
-      Animated.spring(dragScaleAnim, {
-        toValue: 1.1,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }).start();
-    });
-
-  // Pan gesture for dragging
-  const panGesture = Gesture.Pan()
-    .enabled(isDragging)
     .onUpdate((event) => {
-      setDragOffset({
-        x: event.translationX,
-        y: event.translationY,
-      });
+      'worklet';
+      runOnJS(onDragUpdate)(event.translationX, event.translationY);
     })
     .onEnd((event) => {
-      // Calculate final position in percentage
-      const newX = Math.max(10, Math.min(90,
-        startPosition.current.x + (event.translationX / SCREEN_WIDTH) * 100
-      ));
-      const newY = Math.max(8, Math.min(75,
-        startPosition.current.y + (event.translationY / SCREEN_HEIGHT) * 100
-      ));
-
-      // Save the new position
-      if (onPositionChange) {
-        onPositionChange(word.id, { x: newX, y: newY });
-      }
-
-      // Reset drag state
-      setIsDragging(false);
-      setDragOffset({ x: 0, y: 0 });
-      Animated.spring(dragScaleAnim, {
-        toValue: 1,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }).start();
-    })
-    .runOnJS(true);
+      'worklet';
+      runOnJS(onDragEnd)(event.translationX, event.translationY);
+    });
 
   // Tap gesture for press
   const tapGesture = Gesture.Tap()
-    .enabled(!isDragging)
     .onEnd(() => {
-      onPress();
-    })
-    .runOnJS(true);
+      'worklet';
+      runOnJS(onPress)();
+    });
 
-  // Combine gestures
-  const composedGesture = Gesture.Race(
-    Gesture.Simultaneous(longPressGesture, panGesture),
-    tapGesture
-  );
+  // Combine gestures - pan takes priority when activated
+  const composedGesture = Gesture.Exclusive(panGesture, tapGesture);
 
   const bubbleContent = (
     <Animated.View
@@ -223,7 +228,7 @@ export function WordBubble({
         )}
 
         {isCompleted && (
-          <View style={styles.completedIcon}>
+          <View style={[styles.completedIcon, { backgroundColor: bubbleColors.bg }]}>
             <Ionicons
               name={state === 'mastered' ? 'star' : 'checkmark'}
               size={10}
@@ -255,11 +260,11 @@ export function WordBubble({
     );
   }
 
-  // Fallback to simple touchable
+  // Fallback to simple pressable
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+    <Pressable onPress={onPress}>
       {bubbleContent}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -308,7 +313,6 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: 'inherit',
     justifyContent: 'center',
     alignItems: 'center',
   },
