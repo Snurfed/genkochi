@@ -288,6 +288,7 @@ export default function CameraExplorationScreen() {
     isAnalyzing,
     setCurrentLesson,
     addLesson,
+    updateLesson,
     deleteLesson,
     currentLesson,
     lessons,
@@ -828,6 +829,19 @@ export default function CameraExplorationScreen() {
     );
   }, [deleteLesson]);
 
+  // Handle word bubble position change (drag-to-move)
+  const handleWordPositionChange = useCallback((wordId: string, newPosition: { x: number; y: number }) => {
+    if (!lesson) return;
+
+    const updatedWords = lesson.words.map(w =>
+      w.id === wordId
+        ? { ...w, userPosition: newPosition }
+        : w
+    );
+
+    updateLesson(lesson.id, { words: updatedWords });
+  }, [lesson, updateLesson]);
+
   // Permission not determined yet
   if (!permission) {
     return <View style={styles.container} />;
@@ -900,7 +914,9 @@ export default function CameraExplorationScreen() {
 
           // Fallback to traditional bubbles if no main subject identified
           return words.map((word, index) => {
-            const position = wordPositions.get(word.id);
+            // Use user-adjusted position if available, otherwise use AI position
+            const aiPosition = wordPositions.get(word.id);
+            const position = word.userPosition || aiPosition;
             if (!position) return null;
 
             return (
@@ -911,6 +927,8 @@ export default function CameraExplorationScreen() {
                 state={getWordState(word)}
                 isActive={activeCard.word?.id === word.id}
                 onPress={() => openWord(word)}
+                onPositionChange={handleWordPositionChange}
+                isDragEnabled={true}
                 delay={index * 100}
               />
             );

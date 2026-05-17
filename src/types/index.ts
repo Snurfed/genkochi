@@ -756,6 +756,9 @@ export interface Word {
   // Position in image (from AI object detection)
   position?: { x: number; y: number }; // Percentage position (0-100)
 
+  // User-adjusted position (from drag-to-move feature)
+  userPosition?: { x: number; y: number }; // User's dragged position (0-100)
+
   // Bounding box for cropped flashcards (percentage of image dimensions)
   boundingBox?: {
     x: number;      // Left edge (0-100%)
